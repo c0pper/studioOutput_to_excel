@@ -1,6 +1,6 @@
 import pandas as pd
 import json
-from utils import get_filename_no_ext, json_folder, ann_folder, text_folder
+from utils import get_filename_no_ext, json_folder, ann_folder, text_folder, load_jsongz, read_txt, get_filestar_name
 from typing import Union
 from pathlib import Path
 import gzip
@@ -12,31 +12,19 @@ class Categorization():
         self.basename = get_filename_no_ext(json_filename)
         self.ann_name = self.basename + ".ann"
         self.txt_name = self.basename + ".txt"
-        self.loaded_json = self.load_jsongz()
-        self.loaded_ann = self.read_txt(ann_folder / self.ann_name)
-        self.loaded_txt = self.read_txt(text_folder / self.txt_name)
+        self.loaded_json = load_jsongz(self.json_filename)
+        self.loaded_ann = read_txt(ann_folder / self.ann_name)
+        self.loaded_txt = read_txt(text_folder / self.txt_name)
 
-    def load_jsongz(self):
-        with gzip.open(self.json_filename, "r") as f:
-            data = f.read()
-            j = json.loads(data.decode('utf-8'))
-        return j
-
-    def read_txt(self, path: Union[Path, str]):
-        if isinstance(path, Path):
-            path = path.__str__()
-        with open(path, encoding="UTF8") as txt:
-            return txt.read()
 
     def get_list_of_categorizations(self) -> list:
         list_of_cats = []
         for x in self.loaded_json["match_info"]["rules"]["categorization"]:
             domain = x["name"]
 
-            file_starname = self.basename[:-1] + "*"
+            file_starname = get_filestar_name(self.basename)
             for file in ann_folder.glob(f'**/{file_starname}'):
-                print(file)
-                content = self.read_txt(file)
+                content = read_txt(file)
                 if domain in content:
                     pass
                 else:
